@@ -1,0 +1,48 @@
+{
+    "launchDate": "2026-06-01T19:00:00+02:00",
+    "email": "info@inganzongari.com",
+    "social": {
+        "instagram": "#",
+        "facebook": "#",
+        "youtube": "#",
+        "x": "#"
+    },
+    "i18n": {
+        "en": {
+            "eyebrow": "Coming Soon",
+            "tagline": "Where tradition meets the stage",
+            "subtitle": "A celebration of Rwandan rhythm, dance and heritage — soon to be unveiled.",
+            "days": "Days",
+            "hours": "Hours",
+            "minutes": "Minutes",
+            "seconds": "Seconds",
+            "launchLabel": "Curtain rises",
+            "launched": "We are live. Karibu!",
+            "rights": "All rights reserved"
+        },
+        "rw": {
+            "eyebrow": "Bizahita Bigaragara",
+            "tagline": "Aho umuco uhurira n'urubuga",
+            "subtitle": "Ibirori by'umuco nyarwanda, imbyino n'umurage — bigiye gufungurwa.",
+            "days": "Iminsi",
+            "hours": "Amasaha",
+            "minutes": "Iminota",
+            "seconds": "Amasegonda",
+            "launchLabel": "Umutaka uzazamuka",
+            "launched": "Twatangiye. Murakaza neza!",
+            "rights": "Uburenganzira bwose burabitswe"
+        },
+        "fr": {
+            "eyebrow": "Bientôt Disponible",
+            "tagline": "Là où la tradition rencontre la scène",
+            "subtitle": "Une célébration du rythme, de la danse et du patrimoine rwandais — bientôt dévoilée.",
+            "days": "Jours",
+            "hours": "Heures",
+            "minutes": "Minutes",
+            "seconds": "Secondes",
+            "launchLabel": "Lever de rideau",
+            "launched": "Nous sommes en ligne. Bienvenue !",
+            "rights": "Tous droits réservés"
+        }
+    }
+}

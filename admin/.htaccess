@@ -1,0 +1,7 @@
+# Block direct download of sensitive admin files.
+<FilesMatch "(credentials\.json|\.htaccess)$">
+    Require all denied
+</FilesMatch>
+
+# Disable directory listing.
+Options -Indexes
