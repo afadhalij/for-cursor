@@ -7,6 +7,17 @@
         "youtube": "#",
         "x": "#"
     },
+    "slideshow": {
+        "intervalMs": 6000,
+        "fadeMs": 2200,
+        "slides": [
+            "assets/slides/01-troupe-portrait.webp",
+            "assets/slides/03-women-pink.webp",
+            "assets/slides/04-warriors-leap.webp",
+            "assets/slides/05-women-purple.webp",
+            "assets/slides/slide-20260514-234508-8a6197.webp"
+        ]
+    },
     "i18n": {
         "en": {
             "eyebrow": "Coming Soon",

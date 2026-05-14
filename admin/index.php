@@ -17,8 +17,9 @@ const ROOT          = __DIR__ . '/..';
 const CONTENT_FILE  = ROOT . '/content.json';
 const CREDS_FILE    = __DIR__ . '/credentials.json';
 const ASSETS_DIR    = ROOT . '/assets';
+const SLIDES_DIR    = ASSETS_DIR . '/slides';
+const SLIDES_REL    = 'assets/slides';
 const LOGO_FILE     = ASSETS_DIR . '/logo.webp';
-const PHOTO_FILE    = ASSETS_DIR . '/troupe.webp';
 
 /* ---------- Session ---------- */
 session_set_cookie_params([
@@ -95,6 +96,17 @@ function default_content(): array {
         'social' => [
             'instagram' => '#', 'facebook' => '#', 'youtube' => '#', 'x' => '#',
         ],
+        'slideshow' => [
+            'intervalMs' => 6000,
+            'fadeMs'     => 2200,
+            'slides'     => [
+                'assets/slides/01-troupe-portrait.webp',
+                'assets/slides/02-women-yellow.webp',
+                'assets/slides/03-women-pink.webp',
+                'assets/slides/04-warriors-leap.webp',
+                'assets/slides/05-women-purple.webp',
+            ],
+        ],
         'i18n' => [
             'en' => [
                 'eyebrow' => 'Coming Soon',
@@ -165,6 +177,37 @@ function for_datetime_local(string $iso): string {
 }
 
 /* ---------- File upload handling ---------- */
+const ALLOWED_IMAGE_MIME = [
+    'image/webp', 'image/png', 'image/jpeg', 'image/gif',
+    'image/x-icon', 'image/vnd.microsoft.icon',
+];
+const MAX_UPLOAD_BYTES = 8 * 1024 * 1024; // 8 MB
+
+function detect_mime(string $tmpPath, string $fallback = ''): string {
+    if (function_exists('finfo_open')) {
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        if ($finfo) {
+            $m = finfo_file($finfo, $tmpPath);
+            finfo_close($finfo);
+            if ($m) return (string) $m;
+        }
+    }
+    return $fallback;
+}
+
+function ext_for_mime(string $mime): string {
+    switch ($mime) {
+        case 'image/webp': return 'webp';
+        case 'image/png':  return 'png';
+        case 'image/jpeg': return 'jpg';
+        case 'image/gif':  return 'gif';
+        case 'image/x-icon':
+        case 'image/vnd.microsoft.icon': return 'ico';
+    }
+    return 'bin';
+}
+
+/** Upload a single file and overwrite the given destination path. */
 function handle_image_upload(string $field, string $destination): ?string {
     if (empty($_FILES[$field]) || ($_FILES[$field]['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
         return null;
@@ -173,22 +216,74 @@ function handle_image_upload(string $field, string $destination): ?string {
     if ($file['error'] !== UPLOAD_ERR_OK) {
         return 'Upload failed (error code ' . (int) $file['error'] . ').';
     }
-    if ($file['size'] > 5 * 1024 * 1024) {
-        return 'File is larger than 5 MB.';
+    if ($file['size'] > MAX_UPLOAD_BYTES) {
+        return 'File is larger than 8 MB.';
     }
-    $finfo = function_exists('finfo_open') ? finfo_open(FILEINFO_MIME_TYPE) : false;
-    $mime = $finfo ? finfo_file($finfo, $file['tmp_name']) : ($file['type'] ?? '');
-    if ($finfo) finfo_close($finfo);
-
-    $allowed = ['image/webp', 'image/png', 'image/jpeg', 'image/gif', 'image/x-icon', 'image/vnd.microsoft.icon'];
-    if (!in_array($mime, $allowed, true)) {
+    $mime = detect_mime($file['tmp_name'], (string) ($file['type'] ?? ''));
+    if (!in_array($mime, ALLOWED_IMAGE_MIME, true)) {
         return 'Unsupported image type (' . h((string) $mime) . ').';
     }
-    if (!is_dir(ASSETS_DIR)) @mkdir(ASSETS_DIR, 0775, true);
+    if (!is_dir(dirname($destination))) @mkdir(dirname($destination), 0775, true);
     if (!@move_uploaded_file($file['tmp_name'], $destination)) {
         return 'Could not write file to ' . h($destination) . '.';
     }
-    return null; // success
+    return null;
+}
+
+/**
+ * Upload one or more slide files. Returns an array with:
+ *   ['saved' => string[] relative paths, 'errors' => string[]]
+ */
+function handle_slide_uploads(string $field): array {
+    $saved = [];
+    $errors = [];
+    if (empty($_FILES[$field]) || empty($_FILES[$field]['name'])) {
+        return ['saved' => $saved, 'errors' => $errors];
+    }
+    $files = $_FILES[$field];
+    $names = (array) $files['name'];
+    if (!is_dir(SLIDES_DIR)) @mkdir(SLIDES_DIR, 0775, true);
+
+    foreach ($names as $i => $origName) {
+        $err = $files['error'][$i] ?? UPLOAD_ERR_NO_FILE;
+        if ($err === UPLOAD_ERR_NO_FILE) continue;
+        if ($err !== UPLOAD_ERR_OK) {
+            $errors[] = 'Slide "' . h((string) $origName) . '" upload error (code ' . (int) $err . ').';
+            continue;
+        }
+        $size = (int) ($files['size'][$i] ?? 0);
+        if ($size > MAX_UPLOAD_BYTES) {
+            $errors[] = 'Slide "' . h((string) $origName) . '" is larger than 8 MB.';
+            continue;
+        }
+        $tmp = (string) $files['tmp_name'][$i];
+        $mime = detect_mime($tmp, (string) ($files['type'][$i] ?? ''));
+        if (!in_array($mime, ALLOWED_IMAGE_MIME, true)) {
+            $errors[] = 'Slide "' . h((string) $origName) . '" has unsupported type (' . h($mime) . ').';
+            continue;
+        }
+        $ext = ext_for_mime($mime);
+        $base = 'slide-' . date('Ymd-His') . '-' . substr(bin2hex(random_bytes(3)), 0, 6) . '.' . $ext;
+        $dest = SLIDES_DIR . '/' . $base;
+        if (!@move_uploaded_file($tmp, $dest)) {
+            $errors[] = 'Could not save slide "' . h((string) $origName) . '".';
+            continue;
+        }
+        $saved[] = SLIDES_REL . '/' . $base;
+    }
+    return ['saved' => $saved, 'errors' => $errors];
+}
+
+/** Restrict any deletion path to the slides directory and prevent directory traversal. */
+function safe_slide_path(string $rel): ?string {
+    $rel = ltrim(str_replace('\\', '/', $rel), '/');
+    if (strpos($rel, SLIDES_REL . '/') !== 0) return null;
+    if (strpos($rel, '..') !== false) return null;
+    $abs = realpath(ROOT . '/' . $rel);
+    $base = realpath(SLIDES_DIR);
+    if ($abs === false || $base === false) return null;
+    if (strpos($abs, $base . DIRECTORY_SEPARATOR) !== 0 && $abs !== $base) return null;
+    return $abs;
 }
 
 /* ---------- Auth actions ---------- */
@@ -250,10 +345,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && is_logged_in()) {
         }
 
         $errors = [];
+
         $logoErr = handle_image_upload('logo', LOGO_FILE);
         if ($logoErr) $errors[] = 'Logo: ' . $logoErr;
-        $photoErr = handle_image_upload('photo', PHOTO_FILE);
-        if ($photoErr) $errors[] = 'Background: ' . $photoErr;
+
+        // Slideshow timing.
+        $interval = (int) ($_POST['slideshow_interval'] ?? 0);
+        $fade     = (int) ($_POST['slideshow_fade']     ?? 0);
+        if ($interval >= 1500 && $interval <= 30000) {
+            $content['slideshow']['intervalMs'] = $interval;
+        }
+        if ($fade >= 200 && $fade <= 8000) {
+            $content['slideshow']['fadeMs'] = $fade;
+        }
+
+        // Existing slides: only keep those still posted (handles reorder + delete).
+        $keep = [];
+        $posted = $_POST['slides'] ?? [];
+        if (is_array($posted)) {
+            foreach ($posted as $rel) {
+                $rel = (string) $rel;
+                if (in_array($rel, $content['slideshow']['slides'] ?? [], true)) {
+                    $keep[] = $rel;
+                }
+            }
+        }
+
+        // Remove deleted slide files from disk.
+        $removed = array_diff($content['slideshow']['slides'] ?? [], $keep);
+        foreach ($removed as $rel) {
+            $abs = safe_slide_path($rel);
+            if ($abs && is_file($abs)) @unlink($abs);
+        }
+
+        // Add newly uploaded slides to the end.
+        $up = handle_slide_uploads('new_slides');
+        if (!empty($up['errors'])) {
+            $errors = array_merge($errors, $up['errors']);
+        }
+        $content['slideshow']['slides'] = array_values(array_merge($keep, $up['saved']));
 
         if (!save_json(CONTENT_FILE, $content)) {
             $errors[] = 'Could not write content.json. Check that the web server has write permission to ' . h(CONTENT_FILE) . '.';
@@ -350,6 +480,18 @@ $isDefaultPwd = !empty($creds['password_hash']) && password_verify('admin123', $
   .upload-row{display:flex;align-items:center;gap:16px}
   .upload-row img{width:64px;height:64px;border-radius:10px;object-fit:cover;border:1px solid var(--line);background:#000}
   .upload-row input[type=file]{flex:1;color:var(--ink-soft);font-size:13px}
+  /* Slideshow editor */
+  .slides-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-top:8px}
+  .slide-card{position:relative;display:block;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#000;cursor:pointer;transition:border-color .2s,transform .2s}
+  .slide-card:hover{border-color:rgba(245,230,200,.4);transform:translateY(-2px)}
+  .slide-card img{display:block;width:100%;aspect-ratio:16/10;object-fit:cover}
+  .slide-card input[type=checkbox]{position:absolute;top:8px;left:8px;width:20px;height:20px;cursor:pointer;accent-color:var(--gold);z-index:2}
+  .slide-card .slide-name{display:block;padding:8px 10px;font-size:11px;color:var(--ink-soft);background:rgba(0,0,0,.55);border-top:1px solid var(--line);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .slide-card .slide-keep{position:absolute;top:8px;right:8px;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:rgba(233,185,98,.85);color:#1a1a1a}
+  .slide-card .slide-remove{position:absolute;top:8px;right:8px;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:rgba(192,57,43,.9);color:#fff;display:none}
+  .slide-card:has(input:not(:checked)) img{filter:grayscale(.7) brightness(.4)}
+  .slide-card:has(input:not(:checked)) .slide-keep{display:none}
+  .slide-card:has(input:not(:checked)) .slide-remove{display:inline-block}
   .alert{padding:12px 16px;border-radius:10px;margin-bottom:18px;font-size:13px;border:1px solid}
   .alert.success{background:rgba(61,155,106,.12);border-color:rgba(61,155,106,.4);color:#a5d8b9}
   .alert.error{background:rgba(192,57,43,.12);border-color:rgba(192,57,43,.4);color:#ffb4ad}
@@ -532,23 +674,59 @@ $isDefaultPwd = !empty($creds['password_hash']) && password_verify('admin123', $
         <?php endforeach; ?>
       </section>
 
-      <!-- Images -->
+      <!-- Logo -->
       <section class="card">
-        <h2>Images</h2>
-        <p class="help">Replace the logo or background photo. PNG, JPG, WebP, or GIF, up to 5 MB. Leave blank to keep the current image.</p>
+        <h2>Logo</h2>
+        <p class="help">Replace the logo shown in the top-left of the public site and admin. PNG, JPG, WebP, or GIF, up to 8 MB. Leave blank to keep the current image.</p>
         <div class="field">
-          <label>Logo (shown top-left)</label>
           <div class="upload-row">
             <img src="../assets/logo.webp?_=<?= time() ?>" alt="Current logo">
             <input type="file" name="logo" accept="image/png,image/jpeg,image/webp,image/gif">
           </div>
         </div>
-        <div class="field">
-          <label>Background photo (faint hero image)</label>
-          <div class="upload-row">
-            <img src="../assets/troupe.webp?_=<?= time() ?>" alt="Current background">
-            <input type="file" name="photo" accept="image/png,image/jpeg,image/webp,image/gif">
+      </section>
+
+      <!-- Slideshow -->
+      <?php
+        $slides = $content['slideshow']['slides'] ?? [];
+        $intervalMs = (int) ($content['slideshow']['intervalMs'] ?? 6000);
+        $fadeMs     = (int) ($content['slideshow']['fadeMs']     ?? 2200);
+      ?>
+      <section class="card">
+        <h2>Background Slideshow</h2>
+        <p class="help">The faint photos rotating behind the title. Untick a slide to remove it (file is deleted on save). Add new slides at the bottom &mdash; you can select multiple files at once.</p>
+
+        <div class="grid">
+          <div class="field">
+            <label for="slideshow_interval">Time per slide (ms)</label>
+            <input type="number" id="slideshow_interval" name="slideshow_interval" min="1500" max="30000" step="100" value="<?= h((string) $intervalMs) ?>">
           </div>
+          <div class="field">
+            <label for="slideshow_fade">Cross-fade duration (ms)</label>
+            <input type="number" id="slideshow_fade" name="slideshow_fade" min="200" max="8000" step="100" value="<?= h((string) $fadeMs) ?>">
+          </div>
+        </div>
+
+        <div class="slides-grid">
+          <?php if (empty($slides)): ?>
+            <p style="color:var(--muted)">No slides yet. Add some below.</p>
+          <?php else: ?>
+            <?php foreach ($slides as $rel): ?>
+              <label class="slide-card">
+                <input type="checkbox" name="slides[]" value="<?= h($rel) ?>" checked>
+                <img src="../<?= h($rel) ?>?_=<?= time() ?>" alt="Slide">
+                <span class="slide-name"><?= h(basename($rel)) ?></span>
+                <span class="slide-keep">Keep</span>
+                <span class="slide-remove">&#10006; Remove</span>
+              </label>
+            <?php endforeach; ?>
+          <?php endif; ?>
+        </div>
+
+        <div class="field" style="margin-top:18px">
+          <label for="new_slides">Add new slides</label>
+          <input type="file" id="new_slides" name="new_slides[]" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+          <p style="color:var(--muted);font-size:12px;margin:6px 0 0">Up to 8 MB each. Tip: use landscape (16:9 or wider) photos at 1600&times;900 or larger for best results.</p>
         </div>
       </section>
 

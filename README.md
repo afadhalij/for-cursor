@@ -15,7 +15,7 @@ A one-page coming-soon site for the Rwandan cultural troupe **Inganzo Ngari**, w
 | `script.js` | Loads `content.json` at runtime, runs the countdown, switches EN/RW/FR. |
 | `content.json` | All editable site copy — read by the front-end, written by the admin panel. |
 | `assets/logo.webp` | The site logo. |
-| `assets/troupe.webp` | The faint hero background photo. |
+| `assets/slides/*.webp` | The cross-fading hero background photos. |
 | `admin/index.php` | Single-page admin: login, edit form, image uploads, password change. |
 | `admin/credentials.json` | Hashed admin password (default `admin123` — **change immediately**). |
 | `admin/.htaccess` | Blocks direct download of the credentials file. |
@@ -49,7 +49,8 @@ Visit `…/admin/`, sign in, then edit any of these:
 - **Launch & Contact** — countdown target date/time and contact email.
 - **Social Links** — paste the full URL for Instagram, Facebook, YouTube, X.
 - **Text & Translations** — eyebrow, tagline, subtitle, countdown labels and footer text in EN, RW, FR.
-- **Images** — upload a new logo or background photo (PNG / JPG / WebP / GIF, up to 5 MB).
+- **Logo** — upload a new top-left logo (PNG / JPG / WebP / GIF, up to 8 MB).
+- **Background Slideshow** — manage the cross-fading hero photos. Tick or untick each slide to keep or remove it (removed files are deleted on save), tweak the time-per-slide and cross-fade duration, and upload one or more new slides at the bottom. Use landscape (16:9) photos at 1600×900 or larger for best results.
 - **Account** — change the admin password (use 8+ characters).
 
 Click **Save changes** — the public page picks up your edits on the next load (the front-end fetches `content.json` with a cache-busting query string, so a hard-refresh isn't needed).

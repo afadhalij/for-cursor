@@ -13,6 +13,17 @@
     launchDate: "2026-06-01T19:00:00+02:00",
     email: "info@inganzongari.com",
     social: { instagram: "#", facebook: "#", youtube: "#", x: "#" },
+    slideshow: {
+      intervalMs: 6000,
+      fadeMs: 2200,
+      slides: [
+        "assets/slides/01-troupe-portrait.webp",
+        "assets/slides/02-women-yellow.webp",
+        "assets/slides/03-women-pink.webp",
+        "assets/slides/04-warriors-leap.webp",
+        "assets/slides/05-women-purple.webp"
+      ]
+    },
     i18n: {
       en: {
         eyebrow: "Coming Soon",
@@ -181,6 +192,58 @@
     var id = setInterval(function () { if (!tick()) clearInterval(id); }, 1000);
   }
 
+  /* -------- 4b. Slideshow background -------- */
+  function startSlideshow(config) {
+    var container = document.getElementById("bg-slideshow");
+    if (!container) return;
+    container.innerHTML = "";
+
+    var slides = (config && Array.isArray(config.slides) ? config.slides : [])
+      .map(function (s) { return String(s).trim(); })
+      .filter(function (s) { return s.length > 0; });
+    if (slides.length === 0) return;
+
+    var intervalMs = Math.max(1500, parseInt(config.intervalMs, 10) || 6000);
+    var fadeMs     = Math.max(200,  parseInt(config.fadeMs, 10)     || 2200);
+
+    container.style.setProperty("--slide-interval", intervalMs + "ms");
+    container.style.setProperty("--slide-fade",     fadeMs + "ms");
+
+    // Preload images so cross-fade is buttery smooth.
+    slides.forEach(function (src) {
+      var im = new Image();
+      im.src = src + (src.indexOf("?") === -1 ? "?_=" + Date.now() : "");
+    });
+
+    var nodes = slides.map(function (src) {
+      var d = document.createElement("div");
+      d.className = "slide";
+      d.style.backgroundImage = "url('" + src.replace(/'/g, "%27") + "')";
+      container.appendChild(d);
+      return d;
+    });
+
+    var idx = 0;
+    nodes[0].classList.add("is-active");
+    if (nodes.length < 2) return;
+
+    setInterval(function () {
+      var current = nodes[idx];
+      idx = (idx + 1) % nodes.length;
+      var next = nodes[idx];
+
+      // Restart Ken Burns animation on the incoming slide.
+      next.style.animation = "none";
+      void next.offsetWidth; // reflow
+      next.style.animation = "";
+
+      next.classList.add("is-active");
+      // Let the next slide fade in fully before removing the previous one's
+      // active class — avoids any flash of pure background between transitions.
+      setTimeout(function () { current.classList.remove("is-active"); }, fadeMs);
+    }, intervalMs);
+  }
+
   /* -------- 5. Load content.json (cache-bust so admin edits show right away) -------- */
   function loadContent() {
     var url = "content.json?_=" + Date.now();
@@ -195,6 +258,7 @@
         }
         if (merged.i18n) STATE.i18n = merged.i18n;
         applyStaticContent(merged);
+        startSlideshow(merged.slideshow || DEFAULTS.slideshow);
       });
   }
 
