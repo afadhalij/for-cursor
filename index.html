@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Inganzo Ngari — Where tradition meets the stage. A celebration of Rwandan rhythm, dance and heritage. Coming soon." />
+  <meta name="theme-color" content="#0a1f17" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Inganzo Ngari — Coming Soon" />
+  <meta property="og:description" content="Where tradition meets the stage. A celebration of Rwandan rhythm, dance and heritage." />
+  <meta property="og:type" content="website" />
+
+  <title>Inganzo Ngari — Coming Soon</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Playfair+Display:wght@700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Decorative cultural pattern background (Imigongo-inspired) -->
+  <div class="bg-layer bg-gradient" aria-hidden="true"></div>
+  <div class="bg-layer bg-pattern" aria-hidden="true"></div>
+  <div class="bg-layer bg-spotlight" aria-hidden="true"></div>
+  <div class="bg-layer bg-grain" aria-hidden="true"></div>
+
+  <!-- Top bar -->
+  <header class="top-bar">
+    <a class="brand" href="#" aria-label="Inganzo Ngari">
+      <svg class="brand-mark" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="goldGrad" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stop-color="#f3d27a" />
+            <stop offset="100%" stop-color="#b8862e" />
+          </linearGradient>
+        </defs>
+        <!-- Stylized intore dancer silhouette with raised arms -->
+        <g fill="url(#goldGrad)">
+          <circle cx="32" cy="14" r="6" />
+          <path d="M32 20 L26 30 L18 22 L14 26 L24 38 L24 52 L28 52 L28 40 L36 40 L36 52 L40 52 L40 38 L50 26 L46 22 L38 30 Z" />
+          <!-- Headdress fronds -->
+          <path d="M24 6 L26 12 M28 4 L29 12 M32 3 L32 12 M36 4 L35 12 M40 6 L38 12" stroke="url(#goldGrad)" stroke-width="1.5" stroke-linecap="round" fill="none" />
+        </g>
+      </svg>
+      <span class="brand-name">
+        <span class="brand-line-1">Inganzo</span>
+        <span class="brand-line-2">Ngari</span>
+      </span>
+    </a>
+
+    <nav class="lang-switch" aria-label="Language">
+      <button class="lang-btn is-active" data-lang="en" aria-pressed="true">EN</button>
+      <span class="lang-sep" aria-hidden="true">/</span>
+      <button class="lang-btn" data-lang="rw" aria-pressed="false">RW</button>
+      <span class="lang-sep" aria-hidden="true">/</span>
+      <button class="lang-btn" data-lang="fr" aria-pressed="false">FR</button>
+    </nav>
+  </header>
+
+  <!-- Hero -->
+  <main class="hero">
+    <p class="eyebrow" data-i18n="eyebrow">Coming Soon</p>
+
+    <h1 class="title">
+      <span class="title-word title-word--1">Inganzo</span>
+      <span class="title-word title-word--2">Ngari</span>
+    </h1>
+
+    <p class="tagline" data-i18n="tagline">Where tradition meets the stage</p>
+
+    <p class="subtitle" data-i18n="subtitle">
+      A celebration of Rwandan rhythm, dance and heritage — soon to be unveiled.
+    </p>
+
+    <!-- Countdown -->
+    <section class="countdown" aria-label="Time until launch" id="countdown">
+      <div class="cd-cell">
+        <span class="cd-num" id="cd-days">00</span>
+        <span class="cd-label" data-i18n="days">Days</span>
+      </div>
+      <div class="cd-cell">
+        <span class="cd-num" id="cd-hours">00</span>
+        <span class="cd-label" data-i18n="hours">Hours</span>
+      </div>
+      <div class="cd-cell">
+        <span class="cd-num" id="cd-minutes">00</span>
+        <span class="cd-label" data-i18n="minutes">Minutes</span>
+      </div>
+      <div class="cd-cell">
+        <span class="cd-num" id="cd-seconds">00</span>
+        <span class="cd-label" data-i18n="seconds">Seconds</span>
+      </div>
+    </section>
+
+    <p class="launch-date">
+      <span data-i18n="launchLabel">Curtain rises</span>
+      <span class="launch-date-value">·&nbsp;1 June 2026</span>
+    </p>
+
+    <!-- Live announcement (also serves screen readers) -->
+    <p id="launched-msg" class="launched-msg" hidden data-i18n="launched">We are live. Karibu!</p>
+  </main>
+
+  <!-- Footer -->
+  <footer class="foot">
+    <ul class="socials" aria-label="Social media">
+      <li>
+        <a href="#" aria-label="Instagram" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Zm0 2a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3H7Zm5 3.5A4.5 4.5 0 1 1 7.5 12 4.5 4.5 0 0 1 12 7.5Zm0 2A2.5 2.5 0 1 0 14.5 12 2.5 2.5 0 0 0 12 9.5ZM17.75 6a1.25 1.25 0 1 1-1.25 1.25A1.25 1.25 0 0 1 17.75 6Z"/></svg>
+        </a>
+      </li>
+      <li>
+        <a href="#" aria-label="Facebook" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13.5 22v-8h2.7l.4-3.2h-3.1V8.7c0-.93.26-1.56 1.6-1.56h1.7V4.27A23 23 0 0 0 14.3 4c-2.45 0-4.13 1.5-4.13 4.25v2.55H7.5V14h2.67v8Z"/></svg>
+        </a>
+      </li>
+      <li>
+        <a href="#" aria-label="YouTube" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21.6 7.2a2.5 2.5 0 0 0-1.76-1.77C18.27 5 12 5 12 5s-6.27 0-7.84.43A2.5 2.5 0 0 0 2.4 7.2 26.2 26.2 0 0 0 2 12a26.2 26.2 0 0 0 .4 4.8 2.5 2.5 0 0 0 1.76 1.77C5.73 19 12 19 12 19s6.27 0 7.84-.43a2.5 2.5 0 0 0 1.76-1.77A26.2 26.2 0 0 0 22 12a26.2 26.2 0 0 0-.4-4.8ZM10 15V9l5.2 3Z"/></svg>
+        </a>
+      </li>
+      <li>
+        <a href="#" aria-label="X (Twitter)" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.66l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25h6.83l4.713 6.231Zm-1.16 17.52h1.833L7.084 4.126H5.117Z"/></svg>
+        </a>
+      </li>
+    </ul>
+
+    <a class="contact" href="mailto:info@inganzongari.com">info@inganzongari.com</a>
+
+    <p class="copyright">
+      © <span id="year">2026</span> Inganzo Ngari ·
+      <span data-i18n="rights">All rights reserved</span>
+    </p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
