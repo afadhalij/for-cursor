@@ -125,31 +125,35 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .lang-switch {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 5px;
-  border: 1px solid var(--c-line);
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid rgba(245, 230, 200, 0.28);
   border-radius: 999px;
   backdrop-filter: blur(6px);
-  background: rgba(6, 20, 16, 0.55);
+  background: rgba(6, 20, 16, 0.7);
 }
 .lang-btn {
   font-family: var(--font-body);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
-  letter-spacing: 0.18em;
-  padding: 6px 12px;
+  letter-spacing: 0.2em;
+  padding: 8px 14px;
   border-radius: 999px;
   color: var(--c-ink-soft);
-  transition: color .25s ease, background .25s ease, transform .15s ease;
+  background: rgba(245, 230, 200, 0.05);
+  border: 1px solid rgba(245, 230, 200, 0.12);
+  transition: color .25s ease, background .25s ease, border-color .25s ease, transform .15s ease;
 }
 .lang-btn:hover {
   color: var(--c-ink);
-  background: rgba(245, 230, 200, 0.08);
+  background: rgba(245, 230, 200, 0.12);
+  border-color: rgba(245, 230, 200, 0.3);
 }
 .lang-btn.is-active {
   color: var(--c-bg-1);
   background: var(--c-gold);
-  box-shadow: 0 2px 12px rgba(233, 185, 98, 0.35);
+  border-color: var(--c-gold);
+  box-shadow: 0 2px 14px rgba(233, 185, 98, 0.45);
 }
 .lang-sep {
   color: var(--c-line);
@@ -360,18 +364,22 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  border: 1px solid var(--c-line);
+  border: 1px solid rgba(245, 230, 200, 0.28);
+  background: rgba(245, 230, 200, 0.04);
   color: var(--c-ink-soft);
-  transition: transform .25s ease, color .25s ease, border-color .25s ease, background .25s ease;
+  transition: transform .25s ease, color .25s ease, border-color .25s ease, background .25s ease, box-shadow .25s ease;
 }
-.socials a:hover {
+.socials a:hover,
+.socials a:focus-visible {
   color: var(--c-bg-1);
   background: var(--c-gold);
   border-color: var(--c-gold);
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(233, 185, 98, 0.45);
+  outline: none;
 }
 .socials svg { width: 18px; height: 18px; }
 
