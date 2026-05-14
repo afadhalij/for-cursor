@@ -17,10 +17,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Playfair+Display:wght@700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
 
+  <link rel="icon" type="image/webp" href="assets/logo.webp" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <!-- Decorative cultural pattern background (Imigongo-inspired) -->
+  <!-- Decorative cultural pattern background (Imigongo-inspired) + troupe photo -->
+  <div class="bg-layer bg-photo" aria-hidden="true"></div>
   <div class="bg-layer bg-gradient" aria-hidden="true"></div>
   <div class="bg-layer bg-pattern" aria-hidden="true"></div>
   <div class="bg-layer bg-spotlight" aria-hidden="true"></div>
@@ -28,22 +30,8 @@
 
   <!-- Top bar -->
   <header class="top-bar">
-    <a class="brand" href="#" aria-label="Inganzo Ngari">
-      <svg class="brand-mark" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <defs>
-          <linearGradient id="goldGrad" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stop-color="#f3d27a" />
-            <stop offset="100%" stop-color="#b8862e" />
-          </linearGradient>
-        </defs>
-        <!-- Stylized intore dancer silhouette with raised arms -->
-        <g fill="url(#goldGrad)">
-          <circle cx="32" cy="14" r="6" />
-          <path d="M32 20 L26 30 L18 22 L14 26 L24 38 L24 52 L28 52 L28 40 L36 40 L36 52 L40 52 L40 38 L50 26 L46 22 L38 30 Z" />
-          <!-- Headdress fronds -->
-          <path d="M24 6 L26 12 M28 4 L29 12 M32 3 L32 12 M36 4 L35 12 M40 6 L38 12" stroke="url(#goldGrad)" stroke-width="1.5" stroke-linecap="round" fill="none" />
-        </g>
-      </svg>
+    <a class="brand" href="#" aria-label="Inganzo Ngari home">
+      <img class="brand-mark" src="assets/logo.webp" alt="Inganzo Ngari logo" width="48" height="48" />
       <span class="brand-name">
         <span class="brand-line-1">Inganzo</span>
         <span class="brand-line-2">Ngari</span>
