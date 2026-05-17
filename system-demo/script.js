@@ -9,6 +9,7 @@ const NAV_GROUPS = [
     label: "Overview",
     items: [
       { icon: "layout-dashboard", label: "Dashboard", active: true },
+      { icon: "briefcase",        label: "Projects", badge: "6" },
       { icon: "calendar-days",    label: "Calendar" },
       { icon: "cake",             label: "Birthdays" },
     ],
@@ -167,6 +168,78 @@ const APPROVALS = [
   { type: "expense", typeLabel: "Expense",       who: "Costume cleaning · Vendor", amount: "75,000 Rwf",  when: "Yesterday" },
   { type: "expense", typeLabel: "Expense",       who: "Sound system rental",      amount: "240,000 Rwf", when: "Yesterday" },
   { type: "recruit", typeLabel: "Recruit confirm", who: "Sandrine Ingabire (eval)", amount: "—",         when: "Today" },
+];
+
+/* ---------- Ongoing projects ----------
+ * Each project is run inside the troupe and brings income; an
+ * Inganzo Ngari staff member is in charge of it. */
+const PROJECTS = [
+  {
+    name: "Traditional Dance Classes",
+    icon: "graduation-cap",
+    note: "Sat mornings · Studio A & B · 42 students",
+    status: "ACTIVE",
+    monthly: 1250000,
+    deltaPct: 8,
+    deltaKind: "up",
+    trend: [950, 1050, 1100, 1180, 1180, 1250],
+    lead: { name: "Aline Uwase",       initials: "AU", role: "Abaterambabazi · Lead" },
+  },
+  {
+    name: "Brand Marketing & Performances",
+    icon: "megaphone",
+    note: "Clients: MTN · Skol · BK · Heineken",
+    status: "ACTIVE",
+    monthly: 1850000,
+    deltaPct: 24,
+    deltaKind: "up",
+    trend: [1200, 1350, 1500, 1500, 1700, 1850],
+    lead: { name: "Patrick Niyonsenga", initials: "PN", role: "Inyamamare · Drummer" },
+  },
+  {
+    name: "Cultural Shop (Agaseke & Imigongo)",
+    icon: "shopping-bag",
+    note: "Pop-up at Kigali Heights · also online",
+    status: "ACTIVE",
+    monthly: 620000,
+    deltaPct: 12,
+    deltaKind: "up",
+    trend: [480, 510, 550, 580, 600, 620],
+    lead: { name: "Diane Mukamana",     initials: "DM", role: "Abaterambabazi · Adv." },
+  },
+  {
+    name: "Group Transport (van rental)",
+    icon: "bus",
+    note: "Toyota Hiace · 14 seats · driver included",
+    status: "ACTIVE",
+    monthly: 480000,
+    deltaPct: -5,
+    deltaKind: "down",
+    trend: [540, 540, 520, 510, 500, 480],
+    lead: { name: "Olivier Manzi",      initials: "OM", role: "Inyamamare · Drummer" },
+  },
+  {
+    name: "Costume & Drum Workshop",
+    icon: "scissors",
+    note: "Custom orders · repairs · external commissions",
+    status: "ACTIVE",
+    monthly: 340000,
+    deltaPct: 18,
+    deltaKind: "up",
+    trend: [220, 240, 270, 290, 310, 340],
+    lead: { name: "Sandrine Ingabire",  initials: "SI", role: "Inyamamare · Singer" },
+  },
+  {
+    name: "Cultural Tourism Tours",
+    icon: "compass",
+    note: "Pilot · Volcanoes NP corridor · twice / month",
+    status: "PILOT",
+    monthly: 180000,
+    deltaPct: 0,
+    deltaKind: "flat",
+    trend: [0, 0, 80, 120, 150, 180],
+    lead: { name: "Eric Twagirayezu",   initials: "ET", role: "Indende · Advanced" },
+  },
 ];
 
 const ACTIVITY = [
@@ -329,6 +402,98 @@ function renderApprovals() {
       toast(isDeny ? "Demo: decision would be recorded in v1" : "Demo: approval would be recorded in v1",
             isDeny ? "x" : "check");
     });
+  });
+}
+
+function formatRwfShort(n) {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 2).replace(/\.?0+$/, "") + "M";
+  if (n >= 1_000)     return (n / 1_000).toFixed(n % 1_000 === 0 ? 0 : 1).replace(/\.?0+$/, "") + "K";
+  return String(n);
+}
+
+function formatRwf(n) {
+  return new Intl.NumberFormat("en-US").format(n);
+}
+
+function sparkline(values, color) {
+  const w = 100, h = 28, pad = 2;
+  const max = Math.max(...values), min = Math.min(...values);
+  const range = max - min || 1;
+  const pts = values.map((v, i) => {
+    const x = pad + (i * (w - pad * 2)) / (values.length - 1);
+    const y = pad + (h - pad * 2) * (1 - (v - min) / range);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(" ");
+  const area = `${pad.toFixed(1)},${h - pad} ${pts} ${(w - pad).toFixed(1)},${h - pad}`;
+  return `
+    <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" class="sparkline" aria-hidden="true">
+      <polygon points="${area}" fill="${color}" fill-opacity="0.12" />
+      <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round" />
+    </svg>`;
+}
+
+function renderProjects() {
+  const grid = document.getElementById("projects-grid");
+  if (!grid) return;
+
+  const totalMonthly = PROJECTS.reduce((s, p) => s + p.monthly, 0);
+  const activeCount  = PROJECTS.filter(p => p.status === "ACTIVE").length;
+  const leadCount    = new Set(PROJECTS.map(p => p.lead.name)).size;
+
+  const summary = document.getElementById("projects-summary");
+  if (summary) {
+    summary.innerHTML = `<span class="text-ink">${activeCount} active</span>
+      · ${PROJECTS.length} total · ${leadCount} leads ·
+      Total <span class="text-gold font-semibold">Rwf ${formatRwf(totalMonthly)}</span> / month`;
+  }
+
+  grid.innerHTML = PROJECTS.map(p => {
+    const arrow  = p.deltaKind === "up" ? "arrow-up-right"
+                 : p.deltaKind === "down" ? "arrow-down-right" : "minus";
+    const sign   = p.deltaPct > 0 ? "+" : "";
+    const sparkColor = p.deltaKind === "down" ? "#ffb4ad"
+                     : p.deltaKind === "up"   ? "#7fd2a3" : "#f5e6c8";
+    return `
+      <article class="project-card">
+        <header class="project-head">
+          <div class="project-icon">${svgIcon(p.icon)}</div>
+          <div class="project-title">
+            <h3>${p.name}</h3>
+            <p class="project-sub">${p.note}</p>
+          </div>
+          <span class="status-chip status-${p.status.toLowerCase()}">${p.status}</span>
+        </header>
+
+        <div class="project-rev">
+          <div>
+            <p class="rev-label">Monthly revenue</p>
+            <p class="rev-value">${formatRwf(p.monthly)}<span class="rev-unit">Rwf</span></p>
+          </div>
+          <span class="rev-delta delta-${p.deltaKind}">
+            ${svgIcon(arrow)}${sign}${p.deltaPct}%
+          </span>
+        </div>
+
+        ${sparkline(p.trend, sparkColor)}
+
+        <footer class="project-lead">
+          <span class="lead-avatar">${p.lead.initials}</span>
+          <div class="lead-meta">
+            <p class="lead-label">In charge</p>
+            <p class="lead-name">${p.lead.name}</p>
+            <p class="lead-role">${p.lead.role}</p>
+          </div>
+          <button class="lead-go" aria-label="Open project">
+            ${svgIcon("arrow-up-right")}
+          </button>
+        </footer>
+      </article>
+    `;
+  }).join("");
+
+  grid.querySelectorAll(".lead-go").forEach(b => {
+    b.addEventListener("click", () => toast("Demo: project detail page in v1", "briefcase"));
   });
 }
 
@@ -500,6 +665,7 @@ document.addEventListener("DOMContentLoaded", () => {
   renderSidebar();
   renderRoleSwitch();
   applyRole("boss");
+  renderProjects();
   renderUpcomingShows();
   renderTopPerformers();
   renderInsurance();
