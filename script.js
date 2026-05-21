@@ -65,8 +65,20 @@
   };
 
   /* -------- 2. Locale helpers -------- */
+  // Browsers ship inconsistent (or no) Kinyarwanda month names, so we
+  // format the RW date manually and only fall back to Intl for EN/FR.
+  var RW_MONTHS = [
+    "Mutarama", "Gashyantare", "Werurwe", "Mata",
+    "Gicurasi", "Kamena", "Nyakanga", "Kanama",
+    "Nzeli", "Ukwakira", "Ugushyingo", "Ukuboza",
+  ];
+
   function formattedLaunchDate(lang) {
-    var locale = { en: "en-GB", rw: "rw-RW", fr: "fr-FR" }[lang] || "en-GB";
+    if (lang === "rw") {
+      var d = STATE.launchDate;
+      return d.getDate() + " " + RW_MONTHS[d.getMonth()] + " " + d.getFullYear();
+    }
+    var locale = { en: "en-GB", fr: "fr-FR" }[lang] || "en-GB";
     try {
       return new Intl.DateTimeFormat(locale, {
         day: "numeric", month: "long", year: "numeric",
