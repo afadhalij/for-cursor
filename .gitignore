@@ -1,0 +1,14 @@
+# Local deployment credentials — NEVER commit
+deploy/deploy-credentials.ps1
+deploy/deploy-credentials.local.*
+**/.env
+**/.env.local
+**/secrets.*
+**/*.secret
+
+# Local build artefacts
+*.zip
+*.tmp
+*.log
+.DS_Store
+Thumbs.db
