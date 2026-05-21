@@ -152,7 +152,7 @@
   function initLanguage() {
     var stored = null;
     try { stored = localStorage.getItem("ing_lang"); } catch (_) {}
-    var initial = stored && STATE.i18n[stored] ? stored : "en";
+    var initial = stored && STATE.i18n[stored] ? stored : "rw";
     applyLanguage(initial);
 
     document.querySelectorAll(".lang-btn").forEach(function (btn) {
