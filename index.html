@@ -19,6 +19,15 @@
 
   <link rel="icon" type="image/webp" href="assets/logo.webp" />
   <link rel="stylesheet" href="styles.css" />
+
+  <!-- Google Analytics 4 (GA4) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-GG8E83TMN8"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-GG8E83TMN8', { anonymize_ip: true });
+  </script>
 </head>
 <body>
   <!-- Decorative background: cross-fading photo slideshow + cultural pattern overlay -->
@@ -125,5 +134,26 @@
   </footer>
 
   <script src="script.js"></script>
+
+  <!-- Soft dismissible cookie notice (Option B). Hidden if previously dismissed. -->
+  <aside id="cookie-notice" class="cookie-notice" role="note" aria-label="Cookie notice" hidden>
+    <span class="cookie-text">
+      We use cookies for anonymous traffic measurement (Google Analytics).
+    </span>
+    <button type="button" id="cookie-ok" class="cookie-ok" aria-label="Dismiss cookie notice">Got it</button>
+  </aside>
+  <script>
+    (function () {
+      try { if (localStorage.getItem('ing_cookie_ack') === '1') return; } catch (_) {}
+      var el = document.getElementById('cookie-notice');
+      if (!el) return;
+      el.hidden = false;
+      document.getElementById('cookie-ok').addEventListener('click', function () {
+        try { localStorage.setItem('ing_cookie_ack', '1'); } catch (_) {}
+        el.classList.add('cookie-out');
+        setTimeout(function () { el.remove(); }, 250);
+      });
+    })();
+  </script>
 </body>
 </html>
