@@ -411,6 +411,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && is_logged_in()) {
             flash('error', 'New password and confirmation do not match.');
         } else {
             $creds['password_hash'] = password_hash($new, PASSWORD_DEFAULT);
+            $creds['must_change']   = false;
             unset($creds['_note']);
             if (save_json(CREDS_FILE, $creds)) {
                 flash('success', 'Password updated.');
@@ -426,7 +427,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && is_logged_in()) {
 $flash = take_flash();
 $content = get_content();
 $creds   = load_json(CREDS_FILE);
-$isDefaultPwd = !empty($creds['password_hash']) && password_verify('admin123', $creds['password_hash']);
+$isDefaultPwd = !empty($creds['must_change']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -529,7 +530,7 @@ $isDefaultPwd = !empty($creds['password_hash']) && password_verify('admin123', $
         </div>
       </form>
       <p style="margin:18px 0 0;color:var(--muted);font-size:11px;text-align:center;letter-spacing:.1em">
-        Default password is <code style="color:var(--gold)">admin123</code>. Change it immediately after first login.
+        Authorised personnel only.
       </p>
     </div>
   </main>

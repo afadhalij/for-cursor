@@ -243,7 +243,8 @@ Write-Host "  Site       http://localhost/inganzongari/"            -ForegroundC
 Write-Host "  Admin      http://localhost/inganzongari/admin/"      -ForegroundColor Cyan
 Write-Host "  Dashboard  http://localhost/inganzongari/system-demo/" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Default admin password: admin123  (change it on first login)" -ForegroundColor Yellow
+Write-Host "Sign in at the Admin URL with the password set during install." -ForegroundColor Yellow
+Write-Host "If you do not have it, ask the project owner."                  -ForegroundColor Yellow
 Write-Host ""
 Write-Host "To update later, re-run this script. It preserves your admin's"      -ForegroundColor DarkGray
 Write-Host "uploaded logo, slides, content.json, and password hash on every run." -ForegroundColor DarkGray

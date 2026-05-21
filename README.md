@@ -17,7 +17,7 @@ A one-page coming-soon site for the Rwandan cultural troupe **Inganzo Ngari**, w
 | `assets/logo.webp` | The site logo. |
 | `assets/slides/*.webp` | The cross-fading hero background photos. |
 | `admin/index.php` | Single-page admin: login, edit form, image uploads, password change. |
-| `admin/credentials.json` | Hashed admin password (default `admin123` — **change immediately**). |
+| `admin/credentials.json` | Bcrypt-hashed admin password. Replace via the *Account* section after first login. |
 | `admin/.htaccess` | Blocks direct download of the credentials file. |
 
 The public page uses **no build step** and **no PHP** — just three static files plus `content.json`. PHP is only needed for the admin panel.
@@ -30,7 +30,7 @@ The public page uses **no build step** and **no PHP** — just three static file
 2. Drop the project into `C:\xampp\htdocs\inganzongari\` (or any subfolder of `htdocs`).
 3. Open the public site at **http://localhost/inganzongari/**
 4. Open the admin panel at **http://localhost/inganzongari/admin/**
-5. Sign in with the default password **`admin123`** and immediately change it from the *Account* section at the bottom of the dashboard.
+5. Sign in with the password set during install and immediately change it from the *Account* section at the bottom of the dashboard. If you do not have the password, ask the project owner.
 
 ### Quick PowerShell installer
 
@@ -79,5 +79,5 @@ The public page (`index.html`, `styles.css`, `script.js`, `content.json`, `asset
 - The admin password is stored as a bcrypt hash in `admin/credentials.json`.
 - The `admin/.htaccess` file blocks direct download of `credentials.json`.
 - Sessions are HttpOnly with SameSite=Lax, and every form is CSRF-protected.
-- The default password (`admin123`) **must** be changed before going to production.
+- The shipped default password **must** be changed via the *Account* section before going to production.
 - For extra hardening on a public server, also restrict `admin/` by IP, HTTP basic auth, or by moving it behind a VPN.
