@@ -131,12 +131,15 @@ Write-Ok "Extracted to $($inner.FullName)"
 # ------------------------------------------------------------------------------
 Write-Step "Installing into $dest"
 
-# Files the admin panel may have written that we should NOT overwrite.
+# Files the admin panel / mgmt system may have written that we should NOT overwrite.
 $preserveRel = @(
     "content.json",
     "admin\credentials.json",
     "assets\logo.webp",
-    "assets\slides"
+    "assets\slides",
+    # Mgmt module local config + uploaded photos
+    "mgmt\includes\config.local.php",
+    "mgmt\uploads"
 )
 
 $backupPath = ""
@@ -213,6 +216,30 @@ if ($svc.Status -ne 'Running') {
 }
 
 # ------------------------------------------------------------------------------
+# 6b. Mgmt module: first-run niceties
+# ------------------------------------------------------------------------------
+Write-Step "Mgmt module setup"
+
+$mgmtConfig  = Join-Path $dest "mgmt\includes\config.local.php"
+$mgmtExample = Join-Path $dest "mgmt\includes\config.local.example.php"
+$mgmtUploads = Join-Path $dest "mgmt\uploads\members"
+
+# Ensure the uploads folder exists (used for member photos)
+if (-not (Test-Path $mgmtUploads)) {
+    New-Item -ItemType Directory -Force -Path $mgmtUploads | Out-Null
+    Write-Ok "Created $mgmtUploads"
+}
+
+# If no local config yet, seed one from the example so the user gets a
+# friendly XAMPP-ready default (root, no password, base = /inganzongari/mgmt).
+$mgmtFirstRun = $false
+if ((Test-Path $mgmtExample) -and (-not (Test-Path $mgmtConfig))) {
+    Copy-Item -Path $mgmtExample -Destination $mgmtConfig -Force
+    Write-Ok "Created $mgmtConfig from the example template"
+    $mgmtFirstRun = $true
+}
+
+# ------------------------------------------------------------------------------
 # 7. Desktop shortcuts
 # ------------------------------------------------------------------------------
 Write-Step "Creating desktop shortcuts"
@@ -221,7 +248,8 @@ $desktop  = [Environment]::GetFolderPath("Desktop")
 $shortcuts = @(
     @{ Name = "Inganzo Ngari Site";       Url = "http://localhost/inganzongari/" },
     @{ Name = "Inganzo Ngari Admin";      Url = "http://localhost/inganzongari/admin/" },
-    @{ Name = "Inganzo Ngari Dashboard";  Url = "http://localhost/inganzongari/system-demo/" }
+    @{ Name = "Inganzo Ngari Dashboard";  Url = "http://localhost/inganzongari/system-demo/" },
+    @{ Name = "Inganzo Ngari Mgmt";       Url = "http://localhost/inganzongari/mgmt/" }
 )
 
 $ws = New-Object -ComObject WScript.Shell
@@ -238,16 +266,31 @@ URL=$($s.Url)
 # 8. Done
 # ------------------------------------------------------------------------------
 Write-Step "All done"
-Write-Host "Your three URLs (work from this PC any time after a reboot):" -ForegroundColor Cyan
-Write-Host "  Site       http://localhost/inganzongari/"            -ForegroundColor Cyan
-Write-Host "  Admin      http://localhost/inganzongari/admin/"      -ForegroundColor Cyan
-Write-Host "  Dashboard  http://localhost/inganzongari/system-demo/" -ForegroundColor Cyan
+Write-Host "Your URLs (work from this PC any time after a reboot):" -ForegroundColor Cyan
+Write-Host "  Site            http://localhost/inganzongari/"            -ForegroundColor Cyan
+Write-Host "  Admin           http://localhost/inganzongari/admin/"      -ForegroundColor Cyan
+Write-Host "  Demo Dashboard  http://localhost/inganzongari/system-demo/" -ForegroundColor Cyan
+Write-Host "  Mgmt System     http://localhost/inganzongari/mgmt/"        -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Sign in at the Admin URL with the password set during install." -ForegroundColor Yellow
 Write-Host "If you do not have it, ask the project owner."                  -ForegroundColor Yellow
 Write-Host ""
+
+if ($mgmtFirstRun) {
+    Write-Host "==> Management system: first-time database setup needed" -ForegroundColor Yellow
+    Write-Host "    1) Open http://localhost/phpmyadmin"                  -ForegroundColor Yellow
+    Write-Host "    2) Click 'New' -> name the database 'inganzo_mgmt' -> Create" -ForegroundColor Yellow
+    Write-Host "    3) Select 'inganzo_mgmt' -> 'Import' tab"             -ForegroundColor Yellow
+    Write-Host "    4) Import:  $dest\mgmt\sql\schema.sql"                -ForegroundColor Yellow
+    Write-Host "    5) Import:  $dest\mgmt\sql\seed.sql"                  -ForegroundColor Yellow
+    Write-Host "    6) Then visit http://localhost/inganzongari/mgmt/"     -ForegroundColor Yellow
+    Write-Host "    7) Sign in:  admin / InganzoN  (change immediately)"  -ForegroundColor Yellow
+    Write-Host ""
+}
+
 Write-Host "To update later, re-run this script. It preserves your admin's"      -ForegroundColor DarkGray
-Write-Host "uploaded logo, slides, content.json, and password hash on every run." -ForegroundColor DarkGray
+Write-Host "uploaded logo, slides, content.json, password hash, AND the mgmt"    -ForegroundColor DarkGray
+Write-Host "module's config.local.php + uploaded photos on every run."            -ForegroundColor DarkGray
 
 # Open the dashboard automatically so you can show the client right away.
 Start-Process "http://localhost/inganzongari/system-demo/"
