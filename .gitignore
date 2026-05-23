@@ -12,3 +12,7 @@ deploy/deploy-credentials.local.*
 *.log
 .DS_Store
 Thumbs.db
+
+# Inganzo Ngari mgmt — local-only files
+mgmt/includes/config.local.php
+mgmt/uploads/
