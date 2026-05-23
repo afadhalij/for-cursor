@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Inganzo Ngari · Management System (Preview)</title>
+
+  <link rel="icon" type="image/webp" href="../assets/logo.webp" />
+
+  <!-- Google Analytics 4 (GA4) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-GG8E83TMN8"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-GG8E83TMN8', { anonymize_ip: true, page_title: 'Demo Dashboard' });
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg: '#061410',
+            'bg-2': '#0a2a1f',
+            panel: '#10261d',
+            'panel-2': '#163127',
+            ink: '#f5e6c8',
+            'ink-soft': '#cfbf9c',
+            muted: '#8c9b8e',
+            gold: '#e9b962',
+            'gold-bright': '#f3d27a',
+            'gold-deep': '#b8862e',
+            line: 'rgba(245, 230, 200, 0.14)',
+            ok: '#3d9b6a',
+            warn: '#e9b962',
+            err: '#c0392b',
+            info: '#2c7eb8',
+          },
+          fontFamily: {
+            display: ['Cinzel', 'serif'],
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="bg-bg text-ink font-sans antialiased">
+
+  <!-- Demo banner -->
+  <div id="demo-banner" class="fixed top-0 inset-x-0 z-50 bg-gradient-to-r from-gold-deep via-gold to-gold-deep text-bg text-xs font-semibold tracking-[0.18em] uppercase text-center py-2 shadow-lg">
+    <span>Preview / Demo &mdash; mock data, real layout</span>
+    <button id="demo-banner-close" class="absolute right-3 top-1/2 -translate-y-1/2 hover:scale-110 transition" aria-label="Dismiss">
+      <i data-lucide="x" class="w-3.5 h-3.5"></i>
+    </button>
+  </div>
+
+  <div class="flex min-h-screen pt-9">
+    <!-- ============================================================
+         SIDEBAR
+         ============================================================ -->
+    <aside class="hidden lg:flex flex-col w-64 shrink-0 bg-bg-2/80 backdrop-blur-xl border-r border-line min-h-[calc(100vh-2.25rem)] sticky top-9">
+      <!-- Brand -->
+      <div class="px-5 py-5 border-b border-line">
+        <a href="#" class="flex items-center gap-3 group">
+          <img src="../assets/logo.webp" alt="Inganzo Ngari" class="w-10 h-10 rounded-xl ring-1 ring-line shadow-lg" />
+          <div class="leading-tight">
+            <div class="font-display text-[13px] font-bold tracking-[0.18em] uppercase">Inganzo Ngari</div>
+            <div class="text-gold text-[10px] tracking-[0.32em] uppercase mt-1">Mgmt System</div>
+          </div>
+        </a>
+      </div>
+
+      <!-- Nav -->
+      <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-6" id="sidebar-nav">
+        <!-- Groups injected by JS -->
+      </nav>
+
+      <!-- User card at bottom -->
+      <div class="p-3 border-t border-line">
+        <div class="flex items-center gap-3 p-2 rounded-xl hover:bg-panel/60 cursor-pointer transition">
+          <div class="w-9 h-9 rounded-full bg-gradient-to-br from-gold-bright to-gold-deep flex items-center justify-center text-bg font-bold text-sm">
+            JB
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-medium truncate">Jean Bosco H.</div>
+            <div class="text-xs text-muted truncate">Boss · Founder</div>
+          </div>
+          <button class="text-muted hover:text-ink transition" title="Sign out">
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ============================================================
+         MAIN
+         ============================================================ -->
+    <div class="flex-1 flex flex-col min-w-0">
+
+      <!-- Top bar -->
+      <header class="sticky top-9 z-30 backdrop-blur-xl bg-bg/70 border-b border-line">
+        <div class="flex items-center gap-3 px-5 lg:px-8 py-3">
+          <!-- Mobile menu button -->
+          <button class="lg:hidden text-ink-soft hover:text-ink" id="mobile-menu-btn">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+          </button>
+
+          <!-- Search -->
+          <div class="flex-1 max-w-md relative">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted"></i>
+            <input type="text" placeholder="Search members, shows, documents..." class="w-full bg-panel/60 border border-line rounded-xl pl-10 pr-4 py-2 text-sm placeholder:text-muted focus:outline-none focus:border-gold/50 focus:ring-2 focus:ring-gold/15 transition" />
+          </div>
+
+          <div class="flex-1"></div>
+
+          <!-- Quick stat pill -->
+          <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-ok/10 border border-ok/30 text-ok text-xs font-medium">
+            <span class="w-2 h-2 rounded-full bg-ok animate-pulse"></span>
+            Live · 12 online
+          </div>
+
+          <!-- Language toggle -->
+          <div class="flex items-center gap-1 p-1 rounded-full border border-line bg-bg-2/60">
+            <button class="px-2.5 py-1 text-[11px] font-bold tracking-[0.18em] rounded-full bg-gold text-bg">EN</button>
+            <button class="px-2.5 py-1 text-[11px] font-bold tracking-[0.18em] rounded-full text-ink-soft hover:text-ink">RW</button>
+          </div>
+
+          <!-- Notifications -->
+          <button class="relative p-2 rounded-xl hover:bg-panel/60 text-ink-soft hover:text-ink transition" id="notif-btn" aria-label="Notifications">
+            <i data-lucide="bell" class="w-5 h-5"></i>
+            <span class="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-gold text-bg text-[10px] font-bold flex items-center justify-center">4</span>
+          </button>
+
+          <!-- Avatar -->
+          <button class="w-9 h-9 rounded-full bg-gradient-to-br from-gold-bright to-gold-deep flex items-center justify-center text-bg font-bold text-sm shadow-lg ring-2 ring-gold/30">
+            JB
+          </button>
+        </div>
+
+        <!-- Role switcher -->
+        <div class="flex items-center gap-3 px-5 lg:px-8 pb-3 border-t border-line pt-3 overflow-x-auto">
+          <span class="text-xs text-muted tracking-[0.18em] uppercase shrink-0">Preview as</span>
+          <div class="flex items-center gap-1.5" id="role-switch">
+            <!-- buttons injected by JS -->
+          </div>
+        </div>
+      </header>
+
+      <!-- Dashboard -->
+      <main class="flex-1 p-5 lg:p-8 space-y-6 max-w-[1500px] w-full">
+
+        <!-- Greeting + date -->
+        <section class="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p class="text-gold text-[11px] font-semibold tracking-[0.32em] uppercase mb-1" id="hello-eyebrow">Murakaza neza</p>
+            <h1 class="font-display text-3xl lg:text-4xl font-bold tracking-tight" id="hello-title">Welcome back, Boss</h1>
+            <p class="text-muted text-sm mt-2" id="hello-sub">Here's everything happening across Inganzo Ngari today.</p>
+          </div>
+          <div class="text-right">
+            <p class="text-xs text-muted tracking-[0.18em] uppercase">Today</p>
+            <p class="font-display text-lg" id="today-date">Saturday, 16 May 2026</p>
+            <p class="text-xs text-muted mt-1">Next training · <span class="text-ink">Tue 19 May, 7:00 PM</span></p>
+          </div>
+        </section>
+
+        <!-- KPI cards -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4" id="kpi-grid">
+          <!-- injected by JS -->
+        </section>
+
+        <!-- Charts row -->
+        <section class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+          <div class="xl:col-span-2 card p-5">
+            <div class="flex items-start justify-between mb-4">
+              <div>
+                <h3 class="text-xs font-semibold tracking-[0.18em] uppercase text-gold">Income vs Expenses</h3>
+                <p class="text-muted text-xs mt-1">Last 6 months (Rwf, millions)</p>
+              </div>
+              <div class="flex items-center gap-3 text-xs">
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-gold"></span>Income</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-info"></span>Expenses</span>
+              </div>
+            </div>
+            <div class="h-64"><canvas id="finance-chart"></canvas></div>
+          </div>
+
+          <div class="card p-5">
+            <div class="flex items-start justify-between mb-4">
+              <div>
+                <h3 class="text-xs font-semibold tracking-[0.18em] uppercase text-gold">Attendance Trend</h3>
+                <p class="text-muted text-xs mt-1">Last 30 days · % present</p>
+              </div>
+              <span class="text-2xl font-display font-bold text-ink">91<span class="text-sm text-muted">%</span></span>
+            </div>
+            <div class="h-64"><canvas id="attendance-chart"></canvas></div>
+          </div>
+        </section>
+
+        <!-- Ongoing Projects -->
+        <section class="space-y-4">
+          <div class="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 class="text-xs font-semibold tracking-[0.18em] uppercase text-gold flex items-center gap-2">
+                <i data-lucide="briefcase" class="w-4 h-4"></i> Ongoing Projects
+              </h2>
+              <p class="text-muted text-xs mt-1" id="projects-summary"></p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="text-xs text-ink-soft hover:text-ink flex items-center gap-1 px-3 py-1.5 rounded-full border border-line bg-bg-2/60">
+                <i data-lucide="filter" class="w-3 h-3"></i> Filter
+              </button>
+              <button class="text-xs text-bg bg-gold hover:bg-gold-bright flex items-center gap-1 px-3 py-1.5 rounded-full font-semibold shadow-lg shadow-gold/20">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> New project
+              </button>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="projects-grid"></div>
+        </section>
+
+        <!-- Mid row: Upcoming Shows + Top Performers -->
+        <section class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          <div class="card p-5">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="text-xs font-semibold tracking-[0.18em] uppercase text-gold">Upcoming Shows</h3>
+                <p class="text-muted text-xs mt-1">Next 30 days · 6 events</p>
+              </div>
+              <button class="text-xs text-gold hover:text-gold-bright flex items-center gap-1">View all <i data-lucide="arrow-right" class="w-3 h-3"></i></button>
+            </div>
+            <ul class="space-y-3" id="shows-list"></ul>
+          </div>
+
+          <div class="card p-5">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="text-xs font-semibold tracking-[0.18em] uppercase text-gold">Top Performers</h3>
+                <p class="text-muted text-xs mt-1">By show count this year</p>
+              </div>
+              <button class="text-xs text-gold hover:text-gold-bright flex items-center gap-1">Full ranking <i data-lucide="arrow-right" class="w-3 h-3"></i></button>
+            </div>
+            <ul class="space-y-2.5" id="top-performers"></ul>
+          </div>
+        </section>
+
+        <!-- Lower row: Loan + Kuzigama + Insurance -->
+        <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+
+          <div class="card p-5">
+            <h3 class="text-xs font-semibold tracking-[0.18em] uppercase text-gold mb-4 flex items-center gap-2">
+              <i data-lucide="hand-coins" class="w-4 h-4"></i> Loan Portfolio
+            </h3>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <p class="text-[11px] text-muted uppercase tracking-wider">Active</p>
+                <p class="text-2xl font-display font-bold">7</p>
+              </div>
+              <div>
+                <p class="text-[11px] text-muted uppercase tracking-wider">Outstanding</p>
+                <p class="text-2xl font-display font-bold">1.85<span class="text-sm text-muted">M</span></p>
+              </div>
+              <div>
+                <p class="text-[11px] text-muted uppercase tracking-wider">Due next run</p>
+                <p class="text-lg font-display font-semibold text-gold">215,000</p>
+              </div>
+              <div>
+                <p class="text-[11px] text-muted uppercase tracking-wider">Avg loan</p>
+                <p class="text-lg font-display font-semibold">264,000</p>
+              </div>
+            </div>
+            <div class="mt-4 pt-4 border-t border-line">
+              <div class="flex justify-between items-center text-xs mb-1">
+                <span class="text-muted">Cap: 3× monthly net</span>
+                <span class="text-ink">5 / 7 within cap</span>
+              </div>
+              <div class="h-1.5 bg-bg rounded-full overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-gold-bright to-gold w-[71%]"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card p-5">
+            <h3 class="text-xs font-semibold tracking-[0.18em] uppercase text-gold mb-4 flex items-center gap-2">
+              <i data-lucide="piggy-bank" class="w-4 h-4"></i> Kuzigama & Welfare
+            </h3>
+            <div class="space-y-3">
+              <div class="flex items-center justify-between p-3 rounded-xl bg-bg/60 border border-line">
+                <div>
+                  <p class="text-[11px] text-muted uppercase tracking-wider">Kuzigama (Savings)</p>
+                  <p class="font-display text-xl font-bold mt-0.5">6,420,000 <span class="text-xs text-muted">Rwf</span></p>
+                </div>
+                <i data-lucide="trending-up" class="w-5 h-5 text-ok"></i>
+              </div>
+              <div class="flex items-center justify-between p-3 rounded-xl bg-bg/60 border border-line">
+                <div>
+                  <p class="text-[11px] text-muted uppercase tracking-wider">Welfare Fund</p>
+                  <p class="font-display text-xl font-bold mt-0.5">1,180,000 <span class="text-xs text-muted">Rwf</span></p>
+                </div>
+                <i data-lucide="heart-handshake" class="w-5 h-5 text-gold"></i>
+              </div>
+              <div class="flex items-center justify-between text-xs px-3">
+                <span class="text-muted">Contributors</span>
+                <span class="text-ink">87 / 87 active</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-xs font-semibold tracking-[0.18em] uppercase text-gold flex items-center gap-2">
+                <i data-lucide="shield-alert" class="w-4 h-4"></i> Insurance Expiring
+              </h3>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-err/15 text-err border border-err/30">5 alerts</span>
+            </div>
+            <ul class="space-y-2.5" id="insurance-list"></ul>
+          </div>
+        </section>
+
+        <!-- Pending Approvals + Recent Activity -->
+        <section class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+          <div class="card p-5 xl:col-span-2">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="text-xs font-semibold tracking-[0.18em] uppercase text-gold">Pending Approvals</h3>
+                <p class="text-muted text-xs mt-1">Awaiting your decision</p>
+              </div>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-gold/15 text-gold border border-gold/30">4 items</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm" id="approvals-table">
+                <thead>
+                  <tr class="text-left text-[11px] text-muted uppercase tracking-wider border-b border-line">
+                    <th class="py-2 font-medium">Type</th>
+                    <th class="py-2 font-medium">Requested by</th>
+                    <th class="py-2 font-medium">Amount</th>
+                    <th class="py-2 font-medium">Submitted</th>
+                    <th class="py-2 font-medium text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="approvals-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-xs font-semibold tracking-[0.18em] uppercase text-gold">Recent Activity</h3>
+              <button class="text-xs text-gold hover:text-gold-bright">Audit log</button>
+            </div>
+            <ul class="space-y-3 text-sm" id="activity-list"></ul>
+          </div>
+        </section>
+
+        <footer class="text-center text-xs text-muted py-6">
+          Inganzo Ngari Management System · Demo build · Data shown is illustrative
+        </footer>
+      </main>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div id="toast-container" class="fixed bottom-6 right-6 z-50 space-y-2 pointer-events-none"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
