@@ -203,6 +203,172 @@ switch ($op) {
         audit_log('member', $id, 'upload_photo');
         reply(['ok' => true, 'photo' => $url]);
     }
+
+    /* -------------------------------------------------------------------
+     * Bulk import (called by the Import-from-Excel UI on the front end)
+     *
+     * Body shape:
+     *   {
+     *     defaults: {
+     *       section_id: 2, performer_type_id: 1, role_id: null, category_id: 6,
+     *       akarere: 'Gasabo', umurenge: 'Remera', akagari: '—'
+     *     },
+     *     rows: [
+     *       { full_name, national_id, gender?, date_of_birth?, phone?, email?,
+     *         akarere?, umurenge?, akagari?, umudugudu?, emergency_name?, emergency_phone?,
+     *         section_id?, performer_type_id?, role_id?, category_id? },
+     *       …
+     *     ]
+     *   }
+     *
+     * Response shape:
+     *   { imported: N, skipped: N, total: N, errors: [{ row_index, full_name, message }] }
+     * ----------------------------------------------------------------- */
+    case 'import': {
+        $b        = read_body();
+        $rows     = $b['rows']     ?? [];
+        $defaults = $b['defaults'] ?? [];
+
+        if (!is_array($rows) || count($rows) === 0) fail('no_rows');
+
+        $imported = 0;
+        $errors   = [];
+
+        // Pre-compute valid IDs so we can validate without 50 round-trips
+        $validSections   = array_column(db_all("SELECT id FROM sections"), 'id');
+        $validPerfTypes  = array_column(db_all("SELECT id FROM performer_types"), 'id');
+        $validRoles      = array_column(db_all("SELECT id FROM roles"), 'id');
+        $validCategories = array_column(db_all("SELECT id FROM categories"), 'id');
+        $performersSection = (int) db_scalar("SELECT id FROM sections WHERE code='performers'");
+
+        db()->beginTransaction();
+
+        try {
+            $stmt = db()->prepare("
+                INSERT INTO members
+                    (full_name, national_id, gender, date_of_birth, phone, email,
+                     akarere, umurenge, akagari, umudugudu,
+                     emergency_name, emergency_phone,
+                     section_id, performer_type_id, role_id, category_id, status, joined_date)
+                VALUES
+                    (:full_name, :national_id, :gender, :date_of_birth, :phone, :email,
+                     :akarere, :umurenge, :akagari, :umudugudu,
+                     :emergency_name, :emergency_phone,
+                     :section_id, :performer_type_id, :role_id, :category_id,
+                     'active', CURDATE())
+            ");
+
+            $insStmt = db()->prepare(
+                "INSERT INTO member_insurance (member_id, has_insurance) VALUES (?, 0)"
+            );
+
+            foreach ($rows as $i => $r) {
+                $row = function ($k, $default = null) use ($r, $defaults) {
+                    $v = $r[$k] ?? null;
+                    if ($v === null || $v === '') $v = $defaults[$k] ?? $default;
+                    return (is_string($v)) ? trim($v) : $v;
+                };
+
+                $full_name = (string) $row('full_name');
+                if ($full_name === '') {
+                    $errors[] = ['row_index' => $i + 1, 'full_name' => '(missing)', 'message' => 'missing_full_name'];
+                    continue;
+                }
+
+                // National ID: digits-only; if missing or malformed, synthesise a placeholder so the row
+                // still imports (admin can fix later)
+                $national_id = preg_replace('/\D/', '', (string) $row('national_id', ''));
+                if (strlen($national_id) < 4) {
+                    // Placeholder NID — admins can edit after import
+                    $national_id = 'IMP' . str_pad(date('YmdHis') . $i, 13, '0', STR_PAD_LEFT);
+                }
+
+                // Gender: from explicit field or parsed from NID (6th digit)
+                $gender = strtoupper((string) $row('gender', ''));
+                if ($gender !== 'M' && $gender !== 'F') {
+                    $d6 = substr($national_id, 5, 1);
+                    if ($d6 === '7') $gender = 'F';
+                    elseif ($d6 === '8') $gender = 'M';
+                    else $gender = 'M'; // fallback — admin can correct
+                }
+
+                // DOB: explicit field or parsed from NID (digits 2-5)
+                $dob = $row('date_of_birth');
+                if (!$dob && strlen($national_id) >= 5 && ctype_digit($national_id)) {
+                    $year = (int) substr($national_id, 1, 4);
+                    if ($year >= 1900 && $year <= 2100) $dob = sprintf('%04d-01-01', $year);
+                }
+
+                $section_id  = (int) ($row('section_id')  ?? 0);
+                $category_id = (int) ($row('category_id') ?? 0);
+                if (!in_array($section_id,  $validSections,   true)) {
+                    $errors[] = ['row_index' => $i + 1, 'full_name' => $full_name, 'message' => 'invalid_section'];
+                    continue;
+                }
+                if (!in_array($category_id, $validCategories, true)) {
+                    $errors[] = ['row_index' => $i + 1, 'full_name' => $full_name, 'message' => 'invalid_category'];
+                    continue;
+                }
+
+                $perf_type = $row('performer_type_id');
+                $perf_type = $perf_type ? (int) $perf_type : null;
+                if ($section_id === $performersSection && !$perf_type) {
+                    $errors[] = ['row_index' => $i + 1, 'full_name' => $full_name, 'message' => 'missing_performer_type'];
+                    continue;
+                }
+                if ($perf_type !== null && !in_array($perf_type, $validPerfTypes, true)) $perf_type = null;
+
+                $role_id = $row('role_id');
+                $role_id = $role_id ? (int) $role_id : null;
+                if ($role_id !== null && !in_array($role_id, $validRoles, true)) $role_id = null;
+
+                try {
+                    $stmt->execute([
+                        ':full_name'        => $full_name,
+                        ':national_id'      => $national_id,
+                        ':gender'           => $gender,
+                        ':date_of_birth'    => $dob ?: null,
+                        ':phone'            => (string) ($row('phone',           '—') ?: '—'),
+                        ':email'            => $row('email'),
+                        ':akarere'          => (string) ($row('akarere',  '—') ?: '—'),
+                        ':umurenge'         => (string) ($row('umurenge', '—') ?: '—'),
+                        ':akagari'          => (string) ($row('akagari',  '—') ?: '—'),
+                        ':umudugudu'        => $row('umudugudu'),
+                        ':emergency_name'   => $row('emergency_name'),
+                        ':emergency_phone'  => $row('emergency_phone'),
+                        ':section_id'       => $section_id,
+                        ':performer_type_id'=> $perf_type,
+                        ':role_id'          => $role_id,
+                        ':category_id'      => $category_id,
+                    ]);
+                    $newId = (int) db()->lastInsertId();
+                    $insStmt->execute([$newId]);
+                    $imported++;
+                } catch (PDOException $e) {
+                    $msg = $e->getMessage();
+                    if (str_contains($msg, 'national_id')) {
+                        $errors[] = ['row_index' => $i + 1, 'full_name' => $full_name, 'message' => 'duplicate_national_id'];
+                    } else {
+                        $errors[] = ['row_index' => $i + 1, 'full_name' => $full_name, 'message' => 'db_error'];
+                    }
+                }
+            }
+
+            db()->commit();
+        } catch (Throwable $e) {
+            db()->rollBack();
+            fail('import_failed: ' . $e->getMessage(), 500);
+        }
+
+        audit_log('member', null, 'bulk_import', ['imported' => $imported, 'errors' => count($errors)]);
+        reply([
+            'imported' => $imported,
+            'skipped'  => count($errors),
+            'total'    => count($rows),
+            'errors'   => array_slice($errors, 0, 100) // cap reported errors at 100
+        ]);
+    }
 }
 
 fail('unknown_op');
+

@@ -14,6 +14,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <!-- QR -->
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<!-- SheetJS — read .xlsx / .csv in the browser for the Members import -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <!-- App-wide helpers -->
 <script src="<?= h(APP_BASE) ?>/assets/js/helpers.js?v=2"></script>

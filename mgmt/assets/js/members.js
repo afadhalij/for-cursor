@@ -528,4 +528,287 @@
     // Initial load for active tab (or whichever ?tab= the URL chose)
     loadFor(REF.activeTab || 'active');
 
+    // =======================================================================
+    // IMPORT FROM EXCEL / CSV
+    // =======================================================================
+
+    // Target fields the importer can map columns to.
+    const IMPORT_FIELDS = [
+        { value: '',                 label: '— Ignore —' },
+        { value: 'full_name',        label: 'Full Name *' },
+        { value: 'national_id',      label: 'National ID *' },
+        { value: 'gender',           label: 'Gender (M/F)' },
+        { value: 'date_of_birth',    label: 'Date of Birth' },
+        { value: 'phone',            label: 'Phone' },
+        { value: 'email',            label: 'Email' },
+        { value: 'akarere',          label: 'Akarere (district)' },
+        { value: 'umurenge',         label: 'Umurenge (sector)' },
+        { value: 'akagari',          label: 'Akagari (cell)' },
+        { value: 'umudugudu',        label: 'Umudugudu (village)' },
+        { value: 'emergency_name',   label: 'Emergency Contact Name' },
+        { value: 'emergency_phone',  label: 'Emergency Contact Phone' },
+        { value: '_section',         label: 'Section (name or id)' },
+        { value: '_performer_type',  label: 'Performer Type (name or id)' },
+        { value: '_role',            label: 'Role (name or id)' },
+        { value: '_category',        label: 'Category (name or id)' },
+    ];
+
+    // Header detection — fuzzy match (case-insensitive, accents stripped)
+    const HEADER_PATTERNS = [
+        [['full name','name','names','fullname','amazina','amazina yombi','izina','izina ryuzuye','nom','noms'], 'full_name'],
+        [['national id','nationalid','nid','indangamuntu','indangamuntu nimero','id','identification','number id'], 'national_id'],
+        [['gender','sex','igitsina','genre'], 'gender'],
+        [['date of birth','dob','birth','itariki yamavuko','itariki yo kuvuka','date naissance','birthdate'], 'date_of_birth'],
+        [['phone','phone number','telephone','telefone','tel','telefoni','nimero','nimero ya telefoni'], 'phone'],
+        [['email','e-mail','mail','imeyili'], 'email'],
+        [['akarere','district','akarere ke'], 'akarere'],
+        [['umurenge','sector','sect'], 'umurenge'],
+        [['akagari','cell','cellule'], 'akagari'],
+        [['umudugudu','village'], 'umudugudu'],
+        [['emergency','emergency name','contact','emergency contact','emergency contact name'], 'emergency_name'],
+        [['emergency phone','emergency number','contact phone','contact number','emergency tel'], 'emergency_phone'],
+        [['section','itsinda'], '_section'],
+        [['performer type','type','performer','performertype','ubwoko'], '_performer_type'],
+        [['role','inshingano','rol'], '_role'],
+        [['category','icyiciro','cat'], '_category'],
+    ];
+
+    function norm(s) {
+        return String(s || '').toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9 ]+/g, ' ')
+            .replace(/\s+/g, ' ').trim();
+    }
+
+    function detectField(header) {
+        const n = norm(header);
+        for (const [keys, field] of HEADER_PATTERNS) {
+            if (keys.some(k => n === k || n.startsWith(k + ' ') || n.endsWith(' ' + k) || n.includes(' ' + k + ' '))) {
+                return field;
+            }
+        }
+        // Looser secondary pass: substring match
+        for (const [keys, field] of HEADER_PATTERNS) {
+            if (keys.some(k => n.includes(k))) return field;
+        }
+        return '';
+    }
+
+    let importState = {
+        headers: [],
+        rows: [],            // raw arrays from SheetJS
+        mapping: {},         // header_index -> field name
+        sampleByHeader: []   // pretty value to show in mapping table
+    };
+
+    function resetImporter() {
+        importState = { headers: [], rows: [], mapping: {}, sampleByHeader: [] };
+        document.getElementById('imp-step-1').style.display = '';
+        document.getElementById('imp-step-2').style.display = 'none';
+        document.getElementById('imp-step-3').style.display = 'none';
+        document.getElementById('imp-back').style.display   = 'none';
+        document.getElementById('imp-import').disabled       = true;
+        document.getElementById('imp-import').innerHTML      = '<i class="fa-solid fa-cloud-arrow-up me-1"></i> Import';
+        document.getElementById('imp-filename').textContent = '';
+        document.getElementById('imp-file').value           = '';
+    }
+
+    // Hide/show performer-type default based on section
+    document.getElementById('imp-def-section').addEventListener('change', () => {
+        const sel = document.getElementById('imp-def-section');
+        const opt = sel.options[sel.selectedIndex];
+        document.getElementById('imp-def-perf-wrap').style.display =
+            opt && opt.dataset.code === 'performers' ? '' : 'none';
+    });
+
+    document.getElementById('importModal').addEventListener('show.bs.modal', resetImporter);
+
+    document.getElementById('imp-file').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (typeof XLSX === 'undefined') {
+            toast('Excel library not yet loaded — reload the page and try again.', 'error');
+            return;
+        }
+        document.getElementById('imp-filename').textContent = file.name;
+
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            try {
+                const data  = new Uint8Array(evt.target.result);
+                const wb    = XLSX.read(data, { type: 'array', cellDates: true });
+                const sheet = wb.Sheets[wb.SheetNames[0]];
+                const rows  = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' });
+                if (rows.length < 2) { toast('File looks empty.', 'error'); return; }
+
+                importState.headers = rows[0].map((h) => String(h || '').trim());
+                importState.rows    = rows.slice(1).filter(r => r.some(c => String(c || '').trim() !== ''));
+
+                // Auto-map
+                importState.mapping = {};
+                importState.headers.forEach((h, idx) => { importState.mapping[idx] = detectField(h); });
+
+                // Pretty sample per header
+                importState.sampleByHeader = importState.headers.map((_, idx) => {
+                    const sample = importState.rows.slice(0, 3).map(r => String(r[idx] || '')).find(v => v) || '';
+                    return sample.length > 40 ? sample.slice(0, 40) + '…' : sample;
+                });
+
+                renderMappingTable();
+                renderPreview();
+
+                document.getElementById('imp-step-1').style.display = 'none';
+                document.getElementById('imp-step-2').style.display = '';
+                document.getElementById('imp-back').style.display    = '';
+                document.getElementById('imp-import').disabled       = false;
+            } catch (err) {
+                toast('Failed to read file: ' + err.message, 'error');
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    });
+
+    document.getElementById('imp-back').addEventListener('click', () => {
+        document.getElementById('imp-step-1').style.display = '';
+        document.getElementById('imp-step-2').style.display = 'none';
+        document.getElementById('imp-back').style.display    = 'none';
+        document.getElementById('imp-import').disabled       = true;
+    });
+
+    function renderMappingTable() {
+        const tbody = document.querySelector('#imp-mapping-table tbody');
+        tbody.innerHTML = '';
+        importState.headers.forEach((h, idx) => {
+            const tr = document.createElement('tr');
+            const opts = IMPORT_FIELDS.map(f =>
+                `<option value="${f.value}" ${f.value === importState.mapping[idx] ? 'selected' : ''}>${escapeHtml(f.label)}</option>`
+            ).join('');
+            tr.innerHTML = `
+                <td style="font-weight:600">${escapeHtml(h)}</td>
+                <td><select class="form-select form-select-sm imp-map" data-idx="${idx}">${opts}</select></td>
+                <td class="text-muted small">${escapeHtml(importState.sampleByHeader[idx])}</td>`;
+            tbody.appendChild(tr);
+        });
+        tbody.querySelectorAll('.imp-map').forEach(sel => {
+            sel.addEventListener('change', () => {
+                importState.mapping[+sel.dataset.idx] = sel.value;
+                renderPreview();
+            });
+        });
+    }
+
+    function buildRow(raw) {
+        const out = {};
+        for (const [idx, field] of Object.entries(importState.mapping)) {
+            if (!field) continue;
+            const v = String(raw[+idx] ?? '').trim();
+            if (v === '') continue;
+            // Defer name->id translation for lookup fields to the next step
+            out[field] = v;
+        }
+        return out;
+    }
+
+    function renderPreview() {
+        const tbody = document.querySelector('#imp-preview-table tbody');
+        tbody.innerHTML = '';
+        let ok = 0, missing = 0;
+        importState.rows.slice(0, 5).forEach((raw, i) => {
+            const r = buildRow(raw);
+            const issues = [];
+            if (!r.full_name)   issues.push('full name');
+            if (!r.national_id) issues.push('national id');
+            const valid = issues.length === 0;
+            if (valid) ok++; else missing++;
+            tbody.insertAdjacentHTML('beforeend', `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td>${escapeHtml(r.full_name || '—')}</td>
+                    <td>${escapeHtml(r.national_id || '—')}</td>
+                    <td>${escapeHtml(r.gender || '—')}</td>
+                    <td>${escapeHtml(r.phone || '—')}</td>
+                    <td>${valid ? '<span class="chip chip-active"><span class="dot"></span>OK</span>'
+                                : '<span class="chip chip-danger"><span class="dot"></span>missing ' + issues.join(', ') + '</span>'}</td>
+                </tr>`);
+        });
+
+        // Full file stats
+        let fileOk = 0, fileMissing = 0;
+        importState.rows.forEach(raw => {
+            const r = buildRow(raw);
+            if (r.full_name && r.national_id) fileOk++; else fileMissing++;
+        });
+        document.getElementById('imp-summary').innerHTML =
+            `<b>${importState.rows.length}</b> data rows · <span style="color:#7fd2a3">${fileOk} ready to import</span>` +
+            (fileMissing > 0 ? ` · <span style="color:#ffb4ad">${fileMissing} missing required fields (will still try — placeholders applied)</span>` : '');
+    }
+
+    // Translate text labels for Section/Performer Type/Role/Category to IDs.
+    function resolveLookups(rowObj) {
+        const out = Object.assign({}, rowObj);
+        const findByName = (list, name) => {
+            if (!name) return null;
+            const n = norm(name);
+            const m = list.find(x => norm(x.name) === n || String(x.id) === String(name));
+            return m ? +m.id : null;
+        };
+        if (out._section)        { out.section_id        = findByName(REF.sections,        out._section);        delete out._section; }
+        if (out._performer_type) { out.performer_type_id = findByName(REF.performer_types, out._performer_type); delete out._performer_type; }
+        if (out._role)           { out.role_id           = findByName(REF.roles,           out._role);           delete out._role; }
+        if (out._category)       { out.category_id       = findByName(REF.categories,      out._category);       delete out._category; }
+        // Normalise gender
+        if (out.gender) {
+            const g = norm(out.gender).charAt(0);
+            out.gender = (g === 'f' || g === 'g') ? 'F' : (g === 'm' || g === 'h') ? 'M' : '';
+        }
+        return out;
+    }
+
+    document.getElementById('imp-import').addEventListener('click', async () => {
+        const btn = document.getElementById('imp-import');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Importing…';
+
+        const defaults = {
+            section_id:        +document.getElementById('imp-def-section').value || null,
+            performer_type_id: +document.getElementById('imp-def-performer').value || null,
+            category_id:       +document.getElementById('imp-def-category').value || null,
+            akarere:           document.getElementById('imp-def-akarere').value.trim() || null,
+        };
+
+        const rows = importState.rows.map(r => resolveLookups(buildRow(r)));
+
+        try {
+            const res = await api('members.php?op=import', { method: 'POST', json: { defaults, rows } });
+
+            document.getElementById('imp-step-2').style.display = 'none';
+            document.getElementById('imp-step-3').style.display = '';
+            document.getElementById('imp-back').style.display = 'none';
+            btn.style.display = 'none';
+
+            document.getElementById('imp-result-line').innerHTML =
+                `<b style="color:#7fd2a3">${res.imported}</b> imported, ` +
+                `<b style="color:#ffb4ad">${res.skipped}</b> skipped, ` +
+                `${res.total} total.`;
+
+            if (res.errors && res.errors.length) {
+                document.getElementById('imp-errors-wrap').style.display = '';
+                document.querySelector('#imp-errors-table tbody').innerHTML = res.errors.map(e => `
+                    <tr>
+                        <td>${e.row_index}</td>
+                        <td>${escapeHtml(e.full_name || '—')}</td>
+                        <td><span class="chip chip-danger"><span class="dot"></span>${escapeHtml(e.message)}</span></td>
+                    </tr>`).join('');
+            }
+
+            toast(`Imported ${res.imported} members`, 'success');
+            // Refresh the active table behind the modal
+            loaded.active = false; loadFor('active');
+        } catch (err) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up me-1"></i> Import';
+            toast('Import failed: ' + err.message, 'error');
+        }
+    });
+
 })();
